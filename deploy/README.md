@@ -8,21 +8,20 @@ aspire publish -o deploy      # regenerate; commit the result (deploy/.env is gi
 
 ## One-time setup
 
-1. **GitHub secrets** (repo → Settings → Secrets → Actions): `COOLIFY_WEBHOOK` (the deploy webhook URL from the Coolify
-   resource) and `COOLIFY_TOKEN` (Coolify → Keys & Tokens → API token with deploy permission).
-2. **Coolify resource**: Project → New → Public/Private Repository → build pack **Docker Compose**, compose file
+1. **Coolify resource**: Project → New → Public/Private Repository → build pack **Docker Compose**, compose file
    `/deploy/docker-compose.yaml`.
-3. **Domain**: on the `frontend` service set your domain (`https://todo.example.com`, port `80`). It is the only public
+2. **Domain**: on the `frontend` service set your domain (`https://todo.example.com`, port `80`). It is the only public
    service; nginx proxies `/api` to the other two.
    **Dashboard**: on the `compose-dashboard` service set a second domain with the UI port, `https://dash.example.com:18888`,
    and sign in with `DASHBOARD_TOKEN`. It is public, so use a long random token. Telemetry is in memory only (lost on restart),
    and only the Todo API exports traces/metrics/logs (the Spring and Go images have no OpenTelemetry set up).
-4. **Environment variables**: paste `deploy/.env.example` and fill it in (`PUBLIC_URL` must equal the domain above).
-5. **Turn off Auto Deploy** on the Coolify resource (Advanced). Otherwise Coolify deploys on push, before CI has pushed
-   the new images, and pulls stale or missing ones. Only the workflow's webhook should trigger deploys.
-6. **GHCR access**: make the five packages public, or run `docker login ghcr.io` on the Coolify server with a PAT that has
+3. **Environment variables**: paste `deploy/.env.example` and fill it in (`PUBLIC_URL` must equal the domain above).
+4. **Auto Deploy** stays on: Coolify deploys on every push. CI needs a few minutes to push the new images, so that deploy can
+   run first and pull the previous `:latest` (or fail on the very first push). Once the Actions run is green, press
+   **Redeploy** in Coolify.
+5. **GHCR access**: make the five packages public, or run `docker login ghcr.io` on the Coolify server with a PAT that has
    `read:packages`.
-7. Push to `main`: the workflow builds and pushes the images, then calls the webhook and Coolify pulls and restarts the stack.
+6. Push to `main`: the workflow builds and pushes the images; redeploy in Coolify when it is green.
 
 ## Notes
 

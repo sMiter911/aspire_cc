@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
-FROM eclipse-temurin:25-jdk AS build
+# The jar is architecture independent: build on the CI host, only the runtime stage is per-architecture.
+FROM --platform=$BUILDPLATFORM eclipse-temurin:25-jdk AS build
 WORKDIR /src
 COPY .mvn .mvn
 COPY mvnw pom.xml ./

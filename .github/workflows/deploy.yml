@@ -1,4 +1,4 @@
-name: Build images and deploy to Coolify
+name: Build and push images
 
 on:
   push:
@@ -28,6 +28,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
 
       - uses: actions/setup-dotnet@v4
@@ -47,6 +48,7 @@ jobs:
         with:
           context: backend
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.PREFIX }}/backend:latest
             ${{ env.PREFIX }}/backend:${{ github.sha }}
@@ -58,6 +60,7 @@ jobs:
         with:
           context: todo-worker
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.PREFIX }}/todo-worker:latest
             ${{ env.PREFIX }}/todo-worker:${{ github.sha }}
@@ -69,6 +72,7 @@ jobs:
         with:
           context: frontend
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.PREFIX }}/frontend:latest
             ${{ env.PREFIX }}/frontend:${{ github.sha }}
@@ -80,6 +84,7 @@ jobs:
         with:
           context: messaging/rabbitmq
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.PREFIX }}/messaging:latest
             ${{ env.PREFIX }}/messaging:${{ github.sha }}
@@ -99,16 +104,3 @@ jobs:
           echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
       - run: aspire publish -o deploy
       - run: git diff --exit-code -- deploy/docker-compose.yaml
-
-  deploy:
-    needs: images
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Coolify deployment
-        env:
-          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
-          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-        run: |
-          curl --fail --show-error --silent \
-            -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
-            "${COOLIFY_WEBHOOK}"
