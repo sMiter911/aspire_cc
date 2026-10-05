@@ -19,11 +19,15 @@ aspire publish -o deploy      # regenerate; commit the result (deploy/.env is gi
 4. **Auto Deploy** stays on: Coolify deploys on every push. CI needs a few minutes to push the new images, so that deploy can
    run first and pull the previous `:latest` (or fail on the very first push). Once the Actions run is green, press
    **Redeploy** in Coolify.
-5. **GHCR access**: make the five packages public, or run `docker login ghcr.io` on the Coolify server with a PAT that has
+5. **GHCR access**: make the six packages public, or run `docker login ghcr.io` on the Coolify server with a PAT that has
    `read:packages`.
 6. Push to `main`: the workflow builds and pushes the images; redeploy in Coolify when it is green.
 
 ## Notes
+
+- Databases `authdb` and `tododb` are created by the `postgres` image's init script, which runs only when the data volume is
+  empty. If Postgres already started once without them, either delete the `postgres-data` volume (loses data) or run
+  `docker exec <postgres-container> psql -U postgres -c "CREATE DATABASE authdb" -c "CREATE DATABASE tododb"`.
 
 - First start: the Todo API applies EF migrations and Spring applies Flyway; services that race Postgres/RabbitMQ restart
   until their dependencies are up (`restart: unless-stopped`).

@@ -39,7 +39,10 @@ static class PublishTopology
                 }
             });
 
-        var postgres = builder.AddPostgres("postgres").WithDataVolume("postgres-data");
+        // Aspire creates the databases at runtime only locally; in compose the image's init script does it.
+        var postgres = builder.AddPostgres("postgres")
+            .WithDataVolume("postgres-data")
+            .WithDockerfile("../database/postgres");
         var authDb = postgres.AddDatabase("authdb");
         var todoDb = postgres.AddDatabase("tododb");
 

@@ -79,6 +79,16 @@ jobs:
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
 
+      - name: postgres (databases created on first start)
+        uses: docker/build-push-action@v6
+        with:
+          context: database/postgres
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.PREFIX }}/postgres:latest
+            ${{ env.PREFIX }}/postgres:${{ github.sha }}
+
       - name: messaging (RabbitMQ with baked topology)
         uses: docker/build-push-action@v6
         with:
