@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Crash_course.AppHost/Crash_course.AppHost.csproj" />
+  <Project Path="Crash_course.ServiceDefaults/Crash_course.ServiceDefaults.csproj" />
+  <Project Path="TodoApi.Tests/TodoApi.Tests.csproj" />
+  <Project Path="TodoApi/TodoApi.csproj" />
+</Solution>

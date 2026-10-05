@@ -1,0 +1,21 @@
+# Local development only. Nothing secret lives here: secrets/URLs arrive as environment variables from Aspire.
+app:
+  refresh:
+    cookie-secure: false    # browsers accept Secure cookies on localhost, but Safari/curl-style tooling does not
+  rate-limit:
+    login: { capacity: 20, window: 1m }
+
+springdoc:
+  api-docs:
+    enabled: true
+scalar:
+  enabled: true
+  page-title: Auth API
+  path: /scalar
+  sources:
+    - url: /v3/api-docs
+      title: Auth API
+
+logging:
+  level:
+    com.example.auth: DEBUG

@@ -1,0 +1,20 @@
+# .NET
+bin/
+obj/
+.vs/
+*.user
+# Java
+backend/target/
+# Node
+frontend/node_modules/
+frontend/dist/
+# Secrets / env (never commit)
+.env
+.env.*
+*.pem
+*.key
+appsettings.Local.json
+secrets.json
+backend/otel/
+aspire-run.log
+!.env.example

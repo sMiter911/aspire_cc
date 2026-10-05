@@ -1,0 +1,139 @@
+services:
+  postgres:
+    image: "docker.io/library/postgres:18.3"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    expose:
+      - "5432"
+    volumes:
+      - type: "volume"
+        target: "/var/lib/postgresql"
+        source: "postgres-data"
+        read_only: false
+    restart: "unless-stopped"
+  messaging:
+    image: "${MESSAGING_IMAGE}"
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASSWORD}"
+    expose:
+      - "5672"
+    volumes:
+      - type: "volume"
+        target: "/var/lib/rabbitmq"
+        source: "rabbitmq-data"
+        read_only: false
+    restart: "unless-stopped"
+  redis:
+    image: "docker.io/library/redis:8.6"
+    command:
+      - "-c"
+      - "redis-server --requirepass $$REDIS_PASSWORD --save 10 1"
+    entrypoint:
+      - "/bin/sh"
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+    expose:
+      - "6379"
+    volumes:
+      - type: "volume"
+        target: "/data"
+        source: "redis-data"
+        read_only: false
+    restart: "unless-stopped"
+  backend:
+    image: "${BACKEND_IMAGE}"
+    environment:
+      PORT: "8080"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/authdb"
+      SPRING_DATASOURCE_USERNAME: "postgres"
+      SPRING_DATASOURCE_PASSWORD: "${POSTGRES_PASSWORD}"
+      APP_JWT_PRIVATE_KEY: "${JWT_PRIVATE_KEY}"
+      APP_BOOTSTRAP_ADMIN_EMAIL: "${ADMIN_EMAIL}"
+      APP_BOOTSTRAP_ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
+      APP_CORS_ALLOWED_ORIGINS: "${PUBLIC_URL}"
+      SERVER_FORWARD_HEADERS_STRATEGY: "native"
+    expose:
+      - "8080"
+    depends_on:
+      postgres:
+        condition: "service_started"
+    restart: "unless-stopped"
+  todo-api:
+    image: "${TODO_API_IMAGE}"
+    environment:
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      HTTP_PORTS: "8080"
+      ConnectionStrings__tododb: "Host=postgres;Port=5432;Username=postgres;Password=${POSTGRES_PASSWORD};Database=tododb"
+      TODODB_HOST: "postgres"
+      TODODB_PORT: "5432"
+      TODODB_USERNAME: "postgres"
+      TODODB_PASSWORD: "${POSTGRES_PASSWORD}"
+      TODODB_URI: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/tododb"
+      TODODB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres:5432/tododb"
+      TODODB_DATABASENAME: "tododb"
+      ConnectionStrings__messaging: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@messaging:5672"
+      MESSAGING_HOST: "messaging"
+      MESSAGING_PORT: "5672"
+      MESSAGING_USERNAME: "${RABBITMQ_USER}"
+      MESSAGING_PASSWORD: "${RABBITMQ_PASSWORD}"
+      MESSAGING_URI: "amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@messaging:5672"
+      Auth__Issuer: "auth-api"
+      Auth__Audience: "todo-api"
+      Auth__MetadataAddress: "http://backend:8080/.well-known/openid-configuration"
+      Auth__AllowInsecureMetadata: "true"
+      Database__MigrateOnStartup: "true"
+      Cors__AllowedOrigins__0: "${PUBLIC_URL}"
+    expose:
+      - "8080"
+    depends_on:
+      postgres:
+        condition: "service_started"
+      messaging:
+        condition: "service_started"
+      backend:
+        condition: "service_started"
+    restart: "unless-stopped"
+  todo-worker:
+    image: "${TODO_WORKER_IMAGE}"
+    environment:
+      PORT: "8081"
+      AMQP_HOST: "messaging"
+      AMQP_PORT: "5672"
+      AMQP_USER: "${RABBITMQ_USER}"
+      AMQP_PASSWORD: "${RABBITMQ_PASSWORD}"
+      REDIS_ADDR: "redis:6379"
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      WORKER_ID: "worker-01"
+    expose:
+      - "8081"
+    depends_on:
+      messaging:
+        condition: "service_started"
+      redis:
+        condition: "service_started"
+    restart: "unless-stopped"
+  frontend:
+    image: "${FRONTEND_IMAGE}"
+    environment:
+      BACKEND_URL: "http://backend:8080"
+      TODO_API_URL: "http://todo-api:8080"
+    expose:
+      - "80"
+    depends_on:
+      backend:
+        condition: "service_started"
+      todo-api:
+        condition: "service_started"
+    restart: "unless-stopped"
+volumes:
+  postgres-data:
+    driver: "local"
+  rabbitmq-data:
+    driver: "local"
+  redis-data:
+    driver: "local"

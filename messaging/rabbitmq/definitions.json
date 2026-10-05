@@ -1,0 +1,199 @@
+{
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "todo.events",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "todo.dlx",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "todo.processing",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic",
+        "x-dead-letter-exchange": "todo.dlx",
+        "x-dead-letter-routing-key": "todo.processing.dead"
+      }
+    },
+    {
+      "name": "todo.processing.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic"
+      }
+    },
+    {
+      "name": "todo.release",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic",
+        "x-dead-letter-exchange": "todo.dlx",
+        "x-dead-letter-routing-key": "todo.release.dead"
+      }
+    },
+    {
+      "name": "todo.release.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic"
+      }
+    },
+    {
+      "name": "todo.status",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic",
+        "x-dead-letter-exchange": "todo.dlx",
+        "x-dead-letter-routing-key": "todo.status.dead"
+      }
+    },
+    {
+      "name": "todo.status.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic"
+      }
+    },
+    {
+      "name": "todo.processing.retry.1",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic",
+        "x-message-ttl": 5000,
+        "x-dead-letter-exchange": "todo.events",
+        "x-dead-letter-routing-key": "todo.created"
+      }
+    },
+    {
+      "name": "todo.processing.retry.2",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic",
+        "x-message-ttl": 30000,
+        "x-dead-letter-exchange": "todo.events",
+        "x-dead-letter-routing-key": "todo.created"
+      }
+    },
+    {
+      "name": "todo.processing.retry.3",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic",
+        "x-message-ttl": 120000,
+        "x-dead-letter-exchange": "todo.events",
+        "x-dead-letter-routing-key": "todo.created"
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "source": "todo.events",
+      "vhost": "/",
+      "destination": "todo.processing",
+      "destination_type": "queue",
+      "routing_key": "todo.created",
+      "arguments": {}
+    },
+    {
+      "source": "todo.events",
+      "vhost": "/",
+      "destination": "todo.release",
+      "destination_type": "queue",
+      "routing_key": "todo.release",
+      "arguments": {}
+    },
+    {
+      "source": "todo.events",
+      "vhost": "/",
+      "destination": "todo.status",
+      "destination_type": "queue",
+      "routing_key": "todo.status.changed",
+      "arguments": {}
+    },
+    {
+      "source": "todo.dlx",
+      "vhost": "/",
+      "destination": "todo.processing.dlq",
+      "destination_type": "queue",
+      "routing_key": "todo.processing.dead",
+      "arguments": {}
+    },
+    {
+      "source": "todo.dlx",
+      "vhost": "/",
+      "destination": "todo.release.dlq",
+      "destination_type": "queue",
+      "routing_key": "todo.release.dead",
+      "arguments": {}
+    },
+    {
+      "source": "todo.dlx",
+      "vhost": "/",
+      "destination": "todo.status.dlq",
+      "destination_type": "queue",
+      "routing_key": "todo.status.dead",
+      "arguments": {}
+    },
+    {
+      "source": "todo.events",
+      "vhost": "/",
+      "destination": "todo.processing.retry.1",
+      "destination_type": "queue",
+      "routing_key": "todo.retry.1",
+      "arguments": {}
+    },
+    {
+      "source": "todo.events",
+      "vhost": "/",
+      "destination": "todo.processing.retry.2",
+      "destination_type": "queue",
+      "routing_key": "todo.retry.2",
+      "arguments": {}
+    },
+    {
+      "source": "todo.events",
+      "vhost": "/",
+      "destination": "todo.processing.retry.3",
+      "destination_type": "queue",
+      "routing_key": "todo.retry.3",
+      "arguments": {}
+    }
+  ]
+}

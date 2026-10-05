@@ -1,0 +1,17 @@
+# Test-only values. The signing key is generated per test run.
+app:
+  jwt:
+    allow-ephemeral-key: true
+  refresh:
+    cookie-secure: false
+  cors:
+    allowed-origins: http://localhost:5173
+  rate-limit:
+    login: { capacity: 1000, window: 1m }
+    register: { capacity: 1000, window: 1m }
+    refresh: { capacity: 1000, window: 1m }
+  bootstrap-admin:
+    email: ""
+    password: ""
+scalar:
+  enabled: false
