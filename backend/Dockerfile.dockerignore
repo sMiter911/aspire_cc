@@ -1,0 +1,6 @@
+# Only what the backend build needs from the repo root
+**
+!backend/
+!database/migrations/
+backend/target/
+backend/otel/

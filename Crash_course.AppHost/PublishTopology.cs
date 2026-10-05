@@ -64,7 +64,7 @@ static class PublishTopology
         var adminPassword = builder.AddParameter("admin-password", secret: true);
         var publicUrl = builder.AddParameter("public-url"); // https://your.domain, the browser-facing origin
 
-        var backend = builder.AddDockerfile("backend", "../backend")
+        var backend = builder.AddDockerfile("backend", "..", "backend/Dockerfile") // context = repo root (Flyway migrations live in database/)
             .WithHttpEndpoint(targetPort: 8080, env: "PORT")
             .WithEnvironment("SPRING_DATASOURCE_URL", ReferenceExpression.Create(
                 $"jdbc:postgresql://{postgres.Resource.PrimaryEndpoint.Property(EndpointProperty.Host)}:{postgres.Resource.PrimaryEndpoint.Property(EndpointProperty.Port)}/{authDb.Resource.DatabaseName}"))
