@@ -14,6 +14,9 @@ aspire publish -o deploy      # regenerate; commit the result (deploy/.env is gi
    `/deploy/docker-compose.yaml`.
 3. **Domain**: on the `frontend` service set your domain (`https://todo.example.com`, port `80`). It is the only public
    service; nginx proxies `/api` to the other two.
+   **Dashboard**: on the `compose-dashboard` service set a second domain with the UI port, `https://dash.example.com:18888`,
+   and sign in with `DASHBOARD_TOKEN`. It is public, so use a long random token. Telemetry is in memory only (lost on restart),
+   and only the Todo API exports traces/metrics/logs (the Spring and Go images have no OpenTelemetry set up).
 4. **Environment variables**: paste `deploy/.env.example` and fill it in (`PUBLIC_URL` must equal the domain above).
 5. **Turn off Auto Deploy** on the Coolify resource (Advanced). Otherwise Coolify deploys on push, before CI has pushed
    the new images, and pulls stale or missing ones. Only the workflow's webhook should trigger deploys.

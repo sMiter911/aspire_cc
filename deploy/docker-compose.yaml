@@ -1,4 +1,16 @@
 services:
+  compose-dashboard:
+    image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:13.6"
+    environment:
+      DASHBOARD__FRONTEND__AUTHMODE: "BrowserToken"
+      DASHBOARD__FRONTEND__BROWSERTOKEN: "${DASHBOARD_TOKEN}"
+      DASHBOARD__OTLP__AUTHMODE: "ApiKey"
+      DASHBOARD__OTLP__PRIMARYAPIKEY: "${DASHBOARD_API_KEY}"
+    expose:
+      - "18889"
+      - "18890"
+      - "18888"
+    restart: "unless-stopped"
   postgres:
     image: "docker.io/library/postgres:18.3"
     environment:
@@ -88,6 +100,10 @@ services:
       Auth__AllowInsecureMetadata: "true"
       Database__MigrateOnStartup: "true"
       Cors__AllowedOrigins__0: "${PUBLIC_URL}"
+      OTEL_EXPORTER_OTLP_HEADERS: "x-otlp-api-key=${DASHBOARD_API_KEY}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "todo-api"
     expose:
       - "8080"
     depends_on:

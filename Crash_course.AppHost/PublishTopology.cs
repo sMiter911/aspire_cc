@@ -12,8 +12,16 @@ static class PublishTopology
 {
     public static void Add(IDistributedApplicationBuilder builder)
     {
+        // Dashboard: browser access needs the token, telemetry ingestion needs the API key (both are secrets).
+        var dashboardToken = builder.AddParameter("dashboard-token", secret: true);
+        var dashboardApiKey = builder.AddParameter("dashboard-api-key", secret: true);
+
         builder.AddDockerComposeEnvironment("compose")
-            .WithDashboard(false) // Coolify has its own logs/metrics; no extra public port
+            .WithDashboard(d => d
+                .WithEnvironment("DASHBOARD__FRONTEND__AUTHMODE", "BrowserToken")
+                .WithEnvironment("DASHBOARD__FRONTEND__BROWSERTOKEN", dashboardToken)
+                .WithEnvironment("DASHBOARD__OTLP__AUTHMODE", "ApiKey")
+                .WithEnvironment("DASHBOARD__OTLP__PRIMARYAPIKEY", dashboardApiKey))
             .ConfigureComposeFile(file =>
             {
                 // Coolify attaches every stack to its own network and proxy; a custom network only gets in the way.
@@ -21,6 +29,11 @@ static class PublishTopology
                 foreach (var service in file.Services.Values)
                 {
                     service.Networks.Clear();
+                    if (service.Ports.Count > 0) // publish through Coolify's proxy (domain -> exposed port), not a host port
+                    {
+                        service.Expose.AddRange(service.Ports.Select(p => p.Split(':')[^1]));
+                        service.Ports.Clear();
+                    }
                     service.Expose.RemoveAll(p => p.Contains("${")); // unresolved default-port placeholder
                     service.Restart = "unless-stopped"; // depends_on only waits for "started"; a service that raced its database retries
                 }
@@ -74,6 +87,7 @@ static class PublishTopology
             .WithEnvironment("Auth__AllowInsecureMetadata", "true") // plain HTTP, but only on the private compose network
             .WithEnvironment("Database__MigrateOnStartup", "true")  // EF migrations applied at start (single instance)
             .WithEnvironment("Cors__AllowedOrigins__0", publicUrl)
+            .WithEnvironment("OTEL_EXPORTER_OTLP_HEADERS", ReferenceExpression.Create($"x-otlp-api-key={dashboardApiKey}"))
             .WithEndpoint("http", e => e.TargetPort = 8080);
 
         builder.AddDockerfile("todo-worker", "../todo-worker")
